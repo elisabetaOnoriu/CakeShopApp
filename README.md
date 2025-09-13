@@ -1,4 +1,4 @@
-# 🍰 Bety’s CakeShop — Spring Boot + JWT + Postgres + Docker
+# 🍰 CakeShop — Spring Boot + JWT + Postgres + Docker
 
 A complete demo shop: REST API secured with JWT, a small Thymeleaf UI for **Home**, **Cake details**, and **Cart**, plus **PostgreSQL** and **Docker Compose** for easy setup.
 
