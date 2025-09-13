@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Bety's CakeShop</title>
+    <style>
+        :root{--bg:#fdf8f5;--panel:#fff3e8;--accent:#ffb347;--accent-2:#ff8c42;--accent-3:#e36c0a;--text:#2f2a26;--muted:#6b6460;--shadow:0 10px 25px rgba(0,0,0,.08);--radius:16px}
+        *{box-sizing:border-box}html,body{height:100%}
+        body{margin:0;background:linear-gradient(180deg,#fff7f0 0%,var(--bg) 100%);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;color:var(--text);display:flex;flex-direction:column}
+        .hidden{display:none !important}
+
+        header{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,var(--accent) 0%,#ffa65b 100%);color:#fff;border-bottom:1px solid rgba(255,255,255,.25)}
+        .nav{max-width:1200px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:16px;justify-content:space-between}
+        .brand{display:flex;align-items:center;gap:12px;font-weight:800}.brand .dot{width:10px;height:10px;border-radius:50%;background:#fff}
+        .links{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+        .link,.btn{color:#fff;text-decoration:none;font-weight:700;padding:8px 12px;border-radius:10px;border:0;background:transparent;cursor:pointer}
+        .btn.secondary{background:rgba(255,255,255,.18);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+        .btn.primary{background:#fff;color:#c24e00;box-shadow:var(--shadow)}.btn.primary:hover{transform:translateY(-1px)}
+        .btn.outline{background:#fff;color:#c24e00;border:1px solid #ffc896}
+        .cart-btn{position:relative}
+        .cart-count{position:absolute;top:-6px;right:-6px;background:#fff;color:#c24e00;border-radius:999px;font-size:12px;line-height:1;padding:3px 6px;box-shadow:var(--shadow);min-width:18px;text-align:center}
+
+        .hero{padding:48px 20px 20px;background:linear-gradient(180deg,#fff7f0 0%,transparent 100%)}
+        .hero-inner{max-width:1200px;margin:0 auto;display:grid;gap:6px}
+        .title{font-size:clamp(28px,4.2vw,44px);margin:0;color:#9b3f00}
+        .subtitle{color:#5b524c;margin:0}.crumbs{color:#fff;opacity:.95;font-weight:600}
+
+        main{flex:1;display:flex}
+        .container{width:100%;max-width:1200px;margin:0 auto;padding:24px 20px 60px;display:flex;flex-direction:column;gap:16px}
+        .toolbar{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap}
+        .input{background:#fff;border:1px solid #eee;border-radius:10px;padding:10px 12px;min-width:240px;box-shadow:var(--shadow)}
+
+        .msg{padding:12px 14px;border-radius:12px;background:var(--panel);box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.05);display:none}
+        .msg.error{background:#fff1ec;border-color:#ffd2c7;color:#b43a06}
+        .msg.info{display:block}.msg.center{text-align:center}
+
+        .grid{display:grid;gap:18px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+        .card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid rgba(0,0,0,.05);overflow:hidden;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s;cursor:pointer}
+        .card:hover{transform:translateY(-4px);box-shadow:0 14px 30px rgba(0,0,0,.12)}
+        .thumb{aspect-ratio:5/3;background:
+          radial-gradient(120px 80px at 20% 20%, rgba(255,179,71,.35), transparent 40%),
+          radial-gradient(140px 90px at 80% 30%, rgba(255,140,66,.28), transparent 45%),
+          linear-gradient(180deg,#ffe8d6,#ffd9bd)}
+        .card-body{padding:14px 14px 16px;display:grid;gap:8px}
+        .card h3{margin:0;font-size:18px;color:#a44500}
+        .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+        .badge{padding:4px 8px;font-size:12px;border-radius:999px;background:#fff7ef;color:#a44c08;border:1px solid #ffd4b5}
+        .price{color:#d35400;font-weight:800;font-size:18px}
+        .desc{color:#6b6460;font-size:14px;line-height:1.35;min-height:2.6em}
+        .link-plain{color:#a44c08;text-decoration:underline}
+
+        .skeleton{animation:shimmer 1.1s infinite linear;background:linear-gradient(90deg,rgba(255,255,255,.1),rgba(255,255,255,.5),rgba(255,255,255,.1));background-size:200% 100%}
+        @keyframes shimmer{0%{background-position:0 0}100%{background-position:-200% 0}}
+        .sk-card{height:250px;border-radius:var(--radius);background:linear-gradient(180deg,#fff0e6,#ffe6d6);border:1px solid rgba(0,0,0,.05);overflow:hidden}
+        .sk-thumb{height:55%;background:rgba(255,255,255,.35)}.sk-lines{padding:14px}
+        .sk-line{height:12px;margin:8px 0;border-radius:8px;background:rgba(255,255,255,.6)}.sk-line.small{width:35%}.sk-line.med{width:70%}
+
+        footer{padding:18px;text-align:center;background:linear-gradient(180deg,#ffa653 0%,var(--accent) 100%);color:#fff}
+
+        .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:1000}
+        .modal{background:#fff;border-radius:16px;box-shadow:0 20px 50px rgba(0,0,0,.25);width:min(720px,92vw);padding:18px}
+        .modal-title{margin:6px 4px 12px;color:#9b3f00}
+        .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .form-grid .full{grid-column:1 / -1}
+        .field{display:grid;gap:6px}
+        .field label{font-weight:700;color:#7a4a16}
+        .field input,.field textarea,.field select{padding:10px 12px;border:1px solid #e9d4c4;border-radius:10px}
+        .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:10px}
+        .btn.cancel{background:#f3e1d5;color:#8b4c15}
+    </style>
+</head>
+<body>
+<header>
+    <div class="nav">
+        <div class="brand"><span class="dot"></span><span>Bety’s CakeShop</span></div>
+        <nav class="links">
+            <a class="link" href="/home">Home</a>
+            <span id="username-display" class="link hidden"></span>
+            <button id="admin-add" class="btn outline hidden" type="button">+ Add Cake</button>
+            <button id="cart-button" class="btn primary cart-btn" type="button">Cart <span id="cart-count" class="cart-count hidden">0</span></button>
+            <button id="logout-button" class="btn secondary hidden" type="button">Logout</button>
+            <a id="login-link" class="btn outline" th:href="@{/login}" href="/login">Login</a>
+            <a id="register-link" class="link" th:href="@{/register}" href="/register">Register</a>
+        </nav>
+    </div>
+</header>
+
+<section class="hero">
+    <div class="hero-inner">
+        <div class="crumbs">Categories / <strong id="category-name">All</strong></div>
+        <h1 class="title" id="category-title">Delicious Cakes</h1>
+        <p class="subtitle">Explore freshly baked goodies by your favorite pastry chefs.</p>
+    </div>
+</section>
+
+<main>
+    <div class="container">
+        <div class="toolbar">
+            <input id="q" class="input" placeholder="Search cakes…" />
+            <select id="catSelect" class="input">
+                <option value="">All categories</option>
+            </select>
+        </div>
+
+        <div id="loading-message" class="msg info center">Loading cakes...</div>
+        <div id="error-message" class="msg error">Failed to load cakes. Please try again later.</div>
+        <div id="no-cakes-message" class="msg center">No cakes available in this category.</div>
+
+        <div id="skeleton-grid" class="grid" aria-hidden="true">
+            <div class="sk-card"><div class="sk-thumb skeleton"></div><div class="sk-lines"><div class="sk-line med skeleton"></div><div class="sk-line skeleton"></div><div class="sk-line small skeleton"></div></div></div>
+            <div class="sk-card"><div class="sk-thumb skeleton"></div><div class="sk-lines"><div class="sk-line med skeleton"></div><div class="sk-line skeleton"></div><div class="sk-line small skeleton"></div></div></div>
+            <div class="sk-card"><div class="sk-thumb skeleton"></div><div class="sk-lines"><div class="sk-line med skeleton"></div><div class="sk-line skeleton"></div><div class="sk-line small skeleton"></div></div></div>
+            <div class="sk-card"><div class="sk-thumb skeleton"></div><div class="sk-lines"><div class="sk-line med skeleton"></div><div class="sk-line skeleton"></div><div class="sk-line small skeleton"></div></div></div>
+        </div>
+
+        <ul id="cakes-list" class="grid" style="list-style:none;padding:0;margin:0;"></ul>
+    </div>
+</main>
+
+<footer><p>&copy; 2025 CakeShop • Baked with love</p></footer>
+
+<!-- Modal: Add Cake -->
+<div id="backdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="addCakeTitle">
+    <div class="modal">
+        <h3 id="addCakeTitle" class="modal-title">Add a new cake</h3>
+        <div class="form-grid">
+            <div class="field"><label for="f_name">Name</label><input id="f_name" required /></div>
+            <div class="field"><label for="f_price">Price</label><input id="f_price" type="number" step="0.01" required /></div>
+            <div class="field"><label for="f_stock">Stock</label><input id="f_stock" type="number" required /></div>
+            <div class="field"><label for="f_weight">Weight (kg)</label><input id="f_weight" type="number" step="0.01" /></div>
+            <div class="field"><label for="f_categoryId">Category</label><select id="f_categoryId"></select></div>
+            <div class="field"><label for="f_chefName">Chef (optional)</label><input id="f_chefName" type="text" placeholder="Pastry Chef Name" /></div>
+            <div class="field full"><label for="f_desc">Description</label><textarea id="f_desc" rows="3"></textarea></div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn cancel" type="button" id="btn-cancel">Cancel</button>
+            <button class="btn primary" type="button" id="btn-save">Save</button>
+        </div>
+        <div id="formMsg" class="msg" style="margin-top:10px"></div>
+    </div>
+</div>
+
+<script>
+    // ---------- helpers ----------
+    const $ = s => document.querySelector(s);
+    const show = el => { el?.classList.remove('hidden'); el && (el.style.display=''); };
+    const hide = el => { el && (el.style.display='none'); };
+    const escapeHtml = s => String(s ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
+
+    // ---------- auth ----------
+    const getToken = () => localStorage.getItem('token') || localStorage.getItem('authToken');
+    function parseJwt(t){ if(!t) return null; const p=t.split('.'); if(p.length!==3) return null; const b=p[1].replace(/-/g,'+').replace(/_/g,'/'); const pad=b+'='.repeat((4-(b.length%4))%4); try{ return JSON.parse(atob(pad)); }catch{ return null; } }
+    function isJwtExpired(t,skew=30){ const p=parseJwt(t); if(!p||!p.exp) return true; const now=Math.floor(Date.now()/1000); return p.exp < (now - skew); }
+
+    // fetch wrapper (no-store + 401 handling)
+    async function apiFetch(url,opts={}){
+      const t=getToken();
+      const headers={'Content-Type':'application/json','Accept':'application/json',...(opts.headers||{})};
+      if(t) headers.Authorization=`Bearer ${t}`;
+      const res=await fetch(url,{ cache:'no-store', ...opts, headers });
+      if(res.status===401 && opts.method && opts.method!=='GET'){ localStorage.clear(); location.href='/login'; }
+      return res;
+    }
+    async function parseBody(res){
+      if(res.status===204) return null;
+      const ct=(res.headers.get('content-type')||'').toLowerCase();
+      if(ct.includes('application/json')){ try { return await res.json(); } catch { return { error:'Invalid JSON from server' }; } }
+      return await res.text();
+    }
+
+    // ---------- header ----------
+    (function initHeader(){
+      const t=getToken();
+      if(t && !isJwtExpired(t)){
+        hide($('#login-link')); hide($('#register-link')); show($('#logout-button')); show($('#cart-button'));
+        const p=parseJwt(t); const name=(p?.sub||p?.username||''); if(name){ $('#username-display').textContent=name; show($('#username-display')); }
+        const role=(p?.role||p?.roles||'').toString(); if(role.includes('ADMIN')) show($('#admin-add'));
+      }else{
+        hide($('#logout-button')); hide($('#username-display')); hide($('#admin-add')); show($('#login-link')); show($('#register-link')); show($('#cart-button'));
+      }
+      $('#logout-button')?.addEventListener('click', async()=>{ try{ await apiFetch('/api/users/logout',{method:'POST'});}finally{ localStorage.clear(); location.href='/'; }});
+      $('#admin-add')?.addEventListener('click',()=>openModal());
+      $('#cart-button')?.addEventListener('click',()=>location.href='/cart');
+    })();
+
+    // ---------- routing ----------
+    function getCategoryIdFromUrl(){ const parts=location.pathname.split('/').filter(Boolean); return parts[0]==='categories'?parts[1]:''; }
+    $('#catSelect')?.addEventListener('change',()=>{ const v=$('#catSelect').value; location.href = v ? `/categories/${v}` : `/home`; });
+    $('#q')?.addEventListener('input',filterLocal);
+
+    // ---------- normalize ----------
+    function normalizeCakesPayload(data){
+      if(Array.isArray(data)) return data;
+      if(data==null) return [];
+      if(Array.isArray(data.cakes)) return data.cakes;
+      if(Array.isArray(data.content)) return data.content;
+      for(const [k,v] of Object.entries(data)){
+        if(Array.isArray(v) && v.length && typeof v[0]==='object' && 'name' in v[0]) return v;
+      }
+      return [];
+    }
+    function normalizeCake(c){
+      if(!c) return null;
+      if(!c.pastryChef && (c.pastryChefId || c.pastryChefName)){
+        c.pastryChef = {};
+        if(c.pastryChefId) c.pastryChef.id = c.pastryChefId;
+        if(c.pastryChefName) c.pastryChef.name = c.pastryChefName;
+      }
+      return c;
+    }
+
+    // ---------- data ----------
+    let lastCakes=[];
+    window.addEventListener('DOMContentLoaded', async()=>{ await loadCategories(); await loadCakes(getCategoryIdFromUrl()); await refreshCartCount(); });
+
+    async function loadCategories(){
+      const tryFetch=async(u)=>{ const r=await apiFetch(u,{method:'GET'}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); };
+      try{
+        let data; try{ data=await tryFetch(`/api/categories?t=${Date.now()}`); } catch { data=await tryFetch(`/api/categories/all?t=${Date.now()}`); }
+        const raw = Array.isArray(data)?data : Array.isArray(data?.content)?data.content : Array.isArray(data?.categories)?data.categories : [];
+        const cats = raw.map(c=>({ id: c.id ?? c.categoryId ?? c.category_id, name: c.name ?? c.categoryName ?? c.title ?? String(c.id ?? c.categoryId ?? '') }));
+        $('#catSelect').innerHTML = '<option value="">All categories</option>' + cats.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+        const modalSel=$('#f_categoryId');
+        if(cats.length){ modalSel.innerHTML=cats.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join(''); modalSel.disabled=false; }
+        else { modalSel.innerHTML='<option value="">No categories available</option>'; modalSel.disabled=true; }
+        const current=getCategoryIdFromUrl(); if(current) $('#catSelect').value=current;
+        const label=current ? (cats.find(c=>String(c.id)===String(current))?.name || 'All') : 'All';
+        $('#category-name').textContent=label; $('#category-title').textContent=`${label} Cakes`; document.title=`${label} – CakeShop`;
+      }catch(e){ console.error('loadCategories error:',e); }
+    }
+
+    async function loadCakes(categoryId){
+      const loading=$('#loading-message'), err=$('#error-message'), empty=$('#no-cakes-message'), sk=$('#skeleton-grid'), list=$('#cakes-list');
+      show(loading); show(sk); hide(err); hide(empty); list.innerHTML='';
+      const bust = `t=${Date.now()}`;
+      const commonParams = `size=1000&sort=id,desc&${bust}`;
+      try {
+        let res;
+        if(categoryId){
+          res = await apiFetch(`/api/categories/${categoryId}/cakes?${commonParams}`,{method:'GET'});
+          if(!res.ok) res = await apiFetch(`/api/categories/${categoryId}?${bust}`,{method:'GET'});
+          if(!res.ok) res = await apiFetch(`/api/cakes?categoryId=${encodeURIComponent(categoryId)}&${commonParams}`,{method:'GET'});
+        } else {
+          res = await apiFetch(`/api/cakes?${commonParams}`,{method:'GET'});
+        }
+        if(!res.ok){ if(res.status===404){ hide(loading); hide(sk); show(empty); return; } throw new Error('HTTP '+res.status); }
+        const raw = await res.json();
+        lastCakes = normalizeCakesPayload(raw).map(normalizeCake);
+        renderCakes(lastCakes);
+      } catch(e){ console.error('loadCakes error:',e); hide(sk); hide(loading); show(err); }
+    }
+
+    function renderCakes(cakes){
+      const list=$('#cakes-list'); hide($('#loading-message')); hide($('#skeleton-grid'));
+      if(!cakes || !cakes.length){ show($('#no-cakes-message')); return; }
+      list.innerHTML = cakes.map(c=>{
+        const id = c.id ?? c.cakeId ?? c.cake_id;                    // << detectăm robust ID
+        const chefName = c.pastryChef?.name || c.pastryChefName || 'Unknown';
+        const chefId   = c.pastryChef?.id ?? c.pastryChefId ?? null;
+        const chefHtml = chefId
+          ? `<a class="link-plain" href="/chefs/${chefId}" onclick="event.stopPropagation()">${escapeHtml(chefName)}</a>`
+          : escapeHtml(chefName);
+        const price = typeof c.price==='number' ? c.price.toFixed(2) : (c.price ?? '—');
+        const weight = c.weight ?? 'N/A';
+        const desc = c.description || 'No description available';
+        return `<li class="card" role="button" tabindex="0" aria-label="${escapeHtml(c.name)}"
+                   onclick="goToCake('${id}')"
+                   onkeypress="if(event.key==='Enter' || event.key===' '){goToCake('${id}')}">
+          <div class="thumb" role="img" aria-label="Cake image placeholder"></div>
+          <div class="card-body">
+            <h3><a href="/cakes/${id}" class="link-plain" onclick="event.stopPropagation()">${escapeHtml(c.name)}</a></h3>
+            <div class="row">
+              <span class="badge">Chef: ${chefHtml}</span>
+              <span class="price">$${escapeHtml(price)}</span>
+            </div>
+            <div class="desc">${escapeHtml(desc)}</div>
+            <div class="row" style="margin-top:6px;">
+              <span class="badge">Weight: ${escapeHtml(String(weight))} kg</span>
+              <button class="btn secondary" type="button" onclick="event.stopPropagation(); addToCart('${id}')">Add to cart</button>
+            </div>
+          </div>
+        </li>`;
+      }).join('');
+    }
+
+    // >>> AICI am pus PLURALUL
+    function goToCake(id){ if(!id) return; location.href = `/cakes/${id}`; }
+
+    function filterLocal(){
+      const q=($('#q').value||'').trim().toLowerCase();
+      renderCakes(lastCakes.filter(c => (c.name||'').toLowerCase().includes(q) || (c.description||'').toLowerCase().includes(q)));
+    }
+
+    // ---------- cart ----------
+    async function addToCart(cakeId){
+      const t=getToken();
+      if(!t){ toast('Please login to use the cart.'); location.href='/login'; return; }
+      try{
+        const res = await apiFetch(`/api/cart/${cakeId}`, { method:'POST' });
+        const body = await parseBody(res);
+        if(!res.ok){
+          const msg = typeof body==='string' ? body : (body?.message || body?.error || JSON.stringify(body));
+          toast('Cart error: ' + msg);
+          return;
+        }
+        toast('Added to cart 🧺');
+        refreshCartCount();
+      }catch(e){ toast('Cart error: '+e.message); }
+    }
+
+    async function refreshCartCount(){
+      const t=getToken(); if(!t){ hide($('#cart-count')); return; }
+      try{
+        const res = await apiFetch(`/api/cart/cakes?t=${Date.now()}`, { method:'GET' });
+        if(!res.ok){ hide($('#cart-count')); return; }
+        const data = await parseBody(res);
+        const count = Array.isArray(data) ? data.length : 0;
+        if(count>0){ $('#cart-count').textContent=String(count); show($('#cart-count')); }
+        else { $('#cart-count').textContent='0'; hide($('#cart-count')); }
+      }catch(_){ hide($('#cart-count')); }
+    }
+
+    // ---------- modal add cake (optimistic insert) ----------
+    $('#btn-cancel')?.addEventListener('click', closeModal);
+    $('#btn-save')?.addEventListener('click', submitCake);
+    function openModal(){ $('#backdrop').style.display='flex'; }
+    function closeModal(){ $('#backdrop').style.display='none'; $('#formMsg').style.display='none'; }
+
+    async function submitCake(){
+      const showMsg=(t,ok=false)=>{ const m=$('#formMsg'); m.textContent=t; m.className='msg '+(ok?'':'error'); m.style.display='block'; };
+      const t=getToken(); if(!t){ showMsg('Unauthorized. Please login.'); return; }
+      const catSel=$('#f_categoryId'); if(!catSel || catSel.disabled || !catSel.value){ showMsg('Please create/select a category first.'); return; }
+
+      const payload={
+        name: ($('#f_name').value||'').trim(),
+        price: parseFloat($('#f_price').value),
+        stock: parseInt($('#f_stock').value),
+        weight: $('#f_weight').value ? parseFloat($('#f_weight').value) : null,
+        categoryId: parseInt(catSel.value),
+        pastryChefName: ($('#f_chefName').value||'').trim() || null,
+        description: ($('#f_desc').value||null)
+      };
+      if(!payload.name || Number.isNaN(payload.price) || Number.isNaN(payload.stock) || Number.isNaN(payload.categoryId)){
+        showMsg('Please fill required fields.'); return;
+      }
+
+      try{
+        const res = await apiFetch('/api/cakes',{method:'POST', body: JSON.stringify(payload)});
+        const body = await parseBody(res);
+        if(!res.ok){ const msg=typeof body==='string'?body:(body?.error||body?.message||JSON.stringify(body)); return showMsg('Failed: '+msg); }
+
+        const currentCat = getCategoryIdFromUrl();
+        const saved = normalizeCake(body && typeof body === 'object' ? body : null);
+        if(!currentCat || String(currentCat) === String(payload.categoryId)){
+          if(saved){
+            lastCakes = [saved, ...lastCakes];
+            renderCakes(lastCakes);
+          }
+        }
+
+        showMsg('Cake added successfully.', true);
+        setTimeout(()=>{ closeModal(); loadCakes(getCategoryIdFromUrl()); }, 500);
+      }catch(e){ showMsg('Network error: '+e.message); }
+    }
+
+    // ---------- toast ----------
+    function toast(text){
+      const el=document.createElement('div'); el.textContent=text;
+      Object.assign(el.style,{position:'fixed',left:'50%',bottom:'26px',transform:'translateX(-50%)',
+        background:'#1f1a17',color:'#fff',padding:'10px 14px',borderRadius:'12px',
+        boxShadow:'0 8px 20px rgba(0,0,0,.25)',zIndex:9999,opacity:'0',transition:'opacity .15s, transform .15s'});
+      document.body.appendChild(el);
+      requestAnimationFrame(()=>{el.style.opacity='1'; el.style.transform='translateX(-50%) translateY(-4px)';});
+      setTimeout(()=>{el.style.opacity='0'; el.style.transform='translateX(-50%)'; setTimeout(()=>el.remove(),180);},1400);
+    }
+</script>
+</body>
+</html>

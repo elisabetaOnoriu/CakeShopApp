@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Cake – CakeShop</title>
+    <style>
+        :root{--bg:#fdf8f5;--panel:#fff3e8;--accent:#ffb347;--accent-2:#ff8c42;--accent-3:#e36c0a;--text:#2f2a26;--muted:#6b6460;--shadow:0 10px 25px rgba(0,0,0,.08);--radius:16px}
+        *{box-sizing:border-box} html,body{height:100%}
+        body{margin:0;background:linear-gradient(180deg,#fff7f0 0%,var(--bg) 100%);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;color:var(--text);display:flex;flex-direction:column}
+        .hidden{display:none !important}
+
+        header{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,var(--accent) 0%,#ffa65b 100%);color:#fff;border-bottom:1px solid rgba(255,255,255,.25)}
+        .nav{max-width:1200px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:16px;justify-content:space-between}
+        .brand{display:flex;align-items:center;gap:12px;font-weight:800}.brand .dot{width:10px;height:10px;border-radius:50%;background:#fff}
+        .links{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+        .link,.btn{color:#fff;text-decoration:none;font-weight:700;padding:8px 12px;border-radius:10px;border:0;background:transparent;cursor:pointer}
+        .btn.secondary{background:rgba(255,255,255,.18);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+        .btn.primary{background:#fff;color:#c24e00;box-shadow:var(--shadow)} .btn.primary:hover{transform:translateY(-1px)}
+        .btn.outline{background:#fff;color:#c24e00;border:1px solid #ffc896}
+        .cart-btn{position:relative}
+        .cart-count{position:absolute;top:-6px;right:-6px;background:#fff;color:#c24e00;border-radius:999px;font-size:12px;line-height:1;padding:3px 6px;box-shadow:var(--shadow);min-width:18px;text-align:center}
+
+        main{flex:1}
+        .container{max-width:1100px;margin:0 auto;padding:24px 20px 60px}
+        .crumbs{color:#5b524c;margin-bottom:10px}
+        .crumbs a{color:#a44500;text-decoration:underline}
+
+        .sheet{display:grid;grid-template-columns:380px 1fr;gap:24px;align-items:start}
+        .thumb{border-radius:16px;background:
+          radial-gradient(140px 90px at 80% 30%, rgba(255,140,66,.25), transparent 45%),
+          radial-gradient(120px 80px at 20% 20%, rgba(255,179,71,.35), transparent 40%),
+          linear-gradient(180deg,#ffe8d6,#ffd9bd);
+          aspect-ratio: 5/4; box-shadow:var(--shadow); border:1px solid rgba(0,0,0,.05);
+        }
+        h1{margin:0 0 8px;color:#9b3f00}
+        .meta{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+        .badge{padding:6px 10px;border-radius:999px;background:#fff7ef;color:#a44c08;border:1px solid #ffd4b5;font-weight:600}
+        .price{color:#d35400;font-weight:800;font-size:22px}
+        .desc{color:#6b6460;line-height:1.45;margin:14px 0 18px}
+        .actions{display:flex;gap:10px;flex-wrap:wrap}
+
+        .panel{margin-top:26px;background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:16px;box-shadow:var(--shadow);padding:16px}
+        .panel h3{margin:0 0 12px;color:#a44500}
+        .stars{color:#ffb347;font-size:18px;letter-spacing:1px}
+        .reviews{display:grid;gap:12px}
+        .review{border-top:1px solid #f1e5dc;padding-top:12px}
+        .review .head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+        .review .author{font-weight:700}
+        .muted{color:#8a8079}
+        .error{background:#fff1ec;border:1px solid #ffd2c7;color:#b43a06;padding:10px;border-radius:10px;margin-top:8px;display:none}
+        .ok{background:#eefbea;border:1px solid #cde9c5;color:#267a2b}
+        .form{display:grid;gap:10px;margin-top:10px}
+        .field{display:grid;gap:6px}
+        textarea,input[type="text"],select{padding:10px 12px;border:1px solid #e9d4c4;border-radius:10px}
+        .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+        .chef-link{color:#a44500;text-decoration:underline}
+    </style>
+</head>
+
+<!-- IMPORTANT: expunem cakeId din PageController; fallback pe URL /cakes/{id} -->
+<body th:attr="data-cake-id=${cakeId}">
+<header>
+    <div class="nav">
+        <div class="brand"><span class="dot"></span><a class="link" href="/home" style="padding:0">Bety’s CakeShop</a></div>
+        <nav class="links">
+            <span id="username-display" class="link hidden"></span>
+            <button id="cart-button" class="btn primary cart-btn" type="button">Cart <span id="cart-count" class="cart-count hidden">0</span></button>
+            <button id="logout-button" class="btn secondary hidden" type="button">Logout</button>
+            <a id="login-link" class="btn outline" href="/login">Login</a>
+            <a id="register-link" class="link" href="/register">Register</a>
+        </nav>
+    </div>
+</header>
+
+<main>
+    <div class="container">
+        <div class="crumbs"><a href="/home">Home</a> / <span id="crumb-cake">Cake</span></div>
+
+        <div class="sheet">
+            <div class="thumb" id="cake-thumb" role="img" aria-label="Cake image placeholder"></div>
+
+            <div>
+                <h1 id="cake-name">Cake</h1>
+                <div class="meta">
+                    <span class="badge">Price: <span class="price" id="cake-price">$—</span></span>
+                    <span class="badge">Weight: <span id="cake-weight">N/A</span> kg</span>
+                    <span class="badge">Stock: <span id="cake-stock">—</span></span>
+                    <span class="badge">Category: <span id="cake-category">—</span></span>
+                </div>
+
+                <div class="row" style="margin:8px 0">
+                    <strong>Pastry Chef:</strong>
+                    <span id="cake-chef" class="muted">Unknown</span>
+                </div>
+
+                <p id="cake-desc" class="desc">Loading…</p>
+
+                <div class="actions">
+                    <button id="btn-add-to-cart" class="btn primary" type="button">Add to cart</button>
+                    <a class="btn secondary" href="/home">Back</a>
+                </div>
+                <div id="flash" class="error" style="margin-top:10px"></div>
+            </div>
+        </div>
+
+        <!-- Reviews -->
+        <section class="panel" id="reviews-panel">
+            <div class="row" style="justify-content:space-between;align-items:center">
+                <h3>Reviews <span class="muted" id="reviews-count">(0)</span></h3>
+                <div class="stars" id="avg-stars" title="Average rating">★★★★★</div>
+            </div>
+
+            <div id="reviews-list" class="reviews"></div>
+
+            <div id="review-form-wrap" class="panel" style="margin-top:16px;padding:12px">
+                <h3>Add a review</h3>
+                <div class="form">
+                    <div class="row">
+                        <label for="rating"><strong>Rating</strong></label>
+                        <select id="rating">
+                            <option value="5">★★★★★ (5)</option>
+                            <option value="4">★★★★☆ (4)</option>
+                            <option value="3">★★★☆☆ (3)</option>
+                            <option value="2">★★☆☆☆ (2)</option>
+                            <option value="1">★☆☆☆☆ (1)</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="comment"><strong>Comment</strong></label>
+                        <textarea id="comment" rows="3" placeholder="Share your thoughts…"></textarea>
+                    </div>
+                    <div class="row">
+                        <button id="btn-submit-review" class="btn primary" type="button">Submit review</button>
+                    </div>
+                    <div id="review-msg" class="error"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<footer>
+    <p style="text-align:center;padding:18px;background:linear-gradient(180deg,#ffa653 0%,var(--accent) 100%);color:#fff;margin:0">
+        &copy; 2025 CakeShop • Baked with love
+    </p>
+</footer>
+
+<script>
+    /* ---------- helpers ---------- */
+    const $ = s => document.querySelector(s);
+    const show = el => { el?.classList.remove('hidden'); el && (el.style.display=''); };
+    const hide = el => { el && (el.style.display='none'); };
+    const escapeHtml = s => String(s ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#039;');
+    const formatPrice = n => (typeof n==='number' && !isNaN(n)) ? n.toFixed(2) : '—';
+    const stars5 = n => '★'.repeat(n) + '☆'.repeat(5-n);
+    const timeAgo = iso => {
+      if (!iso) return '';
+      const d = new Date(iso);
+      const sec = Math.floor((Date.now() - d.getTime())/1000);
+      const r = (v,u)=>`${v} ${u}${v>1?'s':''} ago`;
+      if (sec<60) return r(sec,'second');
+      const m=Math.floor(sec/60); if(m<60) return r(m,'minute');
+      const h=Math.floor(m/60); if(h<24) return r(h,'hour');
+      const dd=Math.floor(h/24); if(dd<30) return r(dd,'day');
+      return d.toLocaleDateString();
+    };
+
+    /* ---------- auth & fetch ---------- */
+    const getToken = () => localStorage.getItem('token') || localStorage.getItem('authToken');
+    function parseJwt(t){ if(!t) return null; const p=t.split('.'); if(p.length!==3) return null; const b=p[1].replace(/-/g,'+').replace(/_/g,'/'); const pad=b+'='.repeat((4-(b.length%4))%4); try{ return JSON.parse(atob(pad)); }catch{ return null; } }
+    function isJwtExpired(t,skew=30){ const p=parseJwt(t); if(!p||!p.exp) return true; const now=Math.floor(Date.now()/1000); return p.exp < (now - skew); }
+
+    async function apiFetch(url,opts={}){
+      const t=getToken();
+      const headers={'Accept':'application/json','Content-Type':'application/json',...(opts.headers||{})};
+      if(t) headers.Authorization = `Bearer ${t}`;
+      const res = await fetch(url,{ cache:'no-store', ...opts, headers });
+      if(res.status===401 && opts.method && opts.method!=='GET'){
+        localStorage.clear(); location.href='/login';
+      }
+      return res;
+    }
+    async function parseBody(res){
+      if(res.status===204) return null;
+      const ct=(res.headers.get('content-type')||'').toLowerCase();
+      if(ct.includes('application/json')){ try { return await res.json(); } catch { return { error:'Invalid JSON from server' }; } }
+      // dacă serverul poate întoarce 201 fără body
+      try{ const t = await res.text(); return t ? JSON.parse(t) : null; }catch{ return null; }
+    }
+
+    /* ---------- header init ---------- */
+    (function initHeader(){
+      const t=getToken();
+      if(t && !isJwtExpired(t)){
+        hide($('#login-link')); hide($('#register-link')); show($('#logout-button')); show($('#cart-button'));
+        const p=parseJwt(t); const name=(p?.sub||p?.username||''); if(name){ $('#username-display').textContent=name; show($('#username-display')); }
+      }else{
+        hide($('#logout-button')); hide($('#username-display')); show($('#login-link')); show($('#register-link')); show($('#cart-button'));
+      }
+      $('#logout-button')?.addEventListener('click', async()=>{ try{ await apiFetch('/api/users/logout',{method:'POST'});}finally{ localStorage.clear(); location.href='/'; }});
+      $('#cart-button')?.addEventListener('click',()=>location.href='/cart');
+    })();
+
+    /* ---------- get cakeId din PageController / atributul data-cake-id sau /cakes/{id} ---------- */
+    function getCakeId(){
+      const fromAttr = document.body.getAttribute('data-cake-id');
+      if (fromAttr && !Number.isNaN(Number(fromAttr))) return fromAttr;
+      const parts = location.pathname.replace(/\/+$/,'').split('/').filter(Boolean);
+      const idx = parts.findIndex(p => p.toLowerCase() === 'cakes' || p.toLowerCase() === 'cake');
+      return (idx >= 0 && parts[idx+1]) ? parts[idx+1] : '';
+    }
+    const cakeId = getCakeId();
+
+    const REVIEWS_GET  = (id)=> `/api/cakes/${id}/reviews`;
+    const REVIEWS_POST = (id)=> `/api/cakes/${id}/reviews`;
+
+    /* ---------- normalize helpers pentru reviews ---------- */
+    function rxRating(r){
+      const v = r?.rating ?? r?.stars ?? r?.score ?? r?.value ?? r?.ratingValue;
+      return Math.max(0, Math.min(5, Number(v)||0));
+    }
+    function rxUser(r){
+      return r?.username ?? r?.user?.username ?? r?.userName ?? r?.author ?? r?.reviewer ?? 'Anonymous';
+    }
+    function rxWhen(r){
+      return r?.createdAt ?? r?.created_on ?? r?.created ?? r?.date ?? r?.timestamp ?? null;
+    }
+    function normalizeReviewsPayload(data){
+      if(Array.isArray(data)) return data;
+      if(Array.isArray(data?.content)) return data.content;
+      if(Array.isArray(data?.reviews)) return data.reviews;
+      return [];
+    }
+
+    /* ---------- page data ---------- */
+    let currentCake = null;
+    let reviews = [];
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      if(!cakeId){ location.href = '/home'; return; }
+      await loadCake();
+      await loadReviews();
+      await refreshCartCount();
+    });
+
+    async function loadCake(){
+      try{
+        const res = await apiFetch(`/api/cakes/${cakeId}`);
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const data = await res.json();
+        currentCake = normalizeCake(data);
+        renderCake(currentCake);
+      }catch(e){
+        message('Failed to load cake: '+e.message, true);
+      }
+    }
+
+    function normalizeCake(c){
+      if(!c) return null;
+      if(!c.pastryChef && (c.pastryChefId || c.pastryChefName)){
+        c.pastryChef = {};
+        if(c.pastryChefId) c.pastryChef.id = c.pastryChefId;
+        if(c.pastryChefName) c.pastryChef.name = c.pastryChefName;
+      }
+      return c;
+    }
+
+    function renderCake(c){
+      $('#crumb-cake').textContent = c.name || 'Cake';
+      $('#cake-name').textContent = c.name || 'Cake';
+      document.title = (c.name ? `${c.name} – CakeShop` : 'Cake – CakeShop');
+      $('#cake-price').textContent = '$' + formatPrice(c.price);
+      $('#cake-weight').textContent = (c.weight ?? 'N/A');
+      $('#cake-stock').textContent = (c.stock ?? '—');
+      $('#cake-category').textContent = (c.category?.name || c.categoryName || c.categoryId || '—');
+      $('#cake-desc').textContent = c.description || 'No description available.';
+      const chefName = c.pastryChef?.name || c.pastryChefName || 'Unknown';
+      const chefId   = c.pastryChef?.id ?? c.pastryChefId ?? null;
+      $('#cake-chef').innerHTML = chefId
+        ? `<a class="chef-link" href="/chefs/${chefId}">${escapeHtml(chefName)}</a>`
+        : escapeHtml(chefName);
+      $('#btn-add-to-cart')?.addEventListener('click', ()=> addToCart(c.id));
+    }
+
+    /* ---------- reviews ---------- */
+    async function loadReviews(){
+      try{
+        let res = await apiFetch(REVIEWS_GET(cakeId));
+        if(!res.ok) { res = await apiFetch(`/api/reviews?cakeId=${encodeURIComponent(cakeId)}&sort=id,desc`); }
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const raw = await res.json();
+        reviews = normalizeReviewsPayload(raw);
+        renderReviews();
+      }catch(e){
+        message('Failed to load reviews: '+e.message, true);
+      }
+    }
+
+    function renderReviews(){
+      const list = $('#reviews-list');
+      list.innerHTML = reviews.map(r=>{
+        const rating = rxRating(r);
+        const author = rxUser(r);
+        const when   = rxWhen(r);
+        const text   = r?.comment ?? r?.text ?? '';
+        return `<div class="review">
+          <div class="head">
+            <div><span class="author">${escapeHtml(author)}</span> · <span class="stars">${stars5(rating)}</span></div>
+            <span class="muted">${escapeHtml(timeAgo(when))}</span>
+          </div>
+          <div class="body">${escapeHtml(text)}</div>
+        </div>`;
+      }).join('');
+
+      // count + average
+      $('#reviews-count').textContent = `(${reviews.length})`;
+      const avg = reviews.length ? (reviews.reduce((s,r)=>s+rxRating(r),0)/reviews.length) : 0;
+      const full = Math.round(avg);
+      $('#avg-stars').innerHTML = `${stars5(full)} <span class="muted" style="font-size:12px">(${avg.toFixed(1)})</span>`;
+    }
+
+    $('#btn-submit-review')?.addEventListener('click', submitReview);
+
+    async function submitReview(){
+      const msg = $('#review-msg'); msg.classList.remove('ok'); msg.style.display='none';
+      const t = getToken();
+      if(!t){ msg.textContent = 'Please log in to post a review.'; msg.style.display='block'; return; }
+
+      const rating = Number($('#rating').value || 0);
+      const comment = ($('#comment').value || '').trim();
+
+      if(!(rating>=1 && rating<=5)){ msg.textContent='Please select a rating (1–5).'; msg.style.display='block'; return; }
+      if(!comment){ msg.textContent='Please write a short comment.'; msg.style.display='block'; return; }
+
+      try{
+        const res = await apiFetch(REVIEWS_POST(cakeId), {
+          method: 'POST',
+          body: JSON.stringify({ rating, comment })
+        });
+        const body = await parseBody(res);
+
+        if(!res.ok){
+          const text = typeof body==='string' ? body : (body?.message || body?.error || JSON.stringify(body));
+          msg.textContent = 'Could not post review: ' + text;
+          msg.style.display='block';
+          return;
+        }
+
+        // dacă serverul nu a întors body, reîncărcăm din API ca să persiste sigur
+        if(!body){
+          await loadReviews();
+        } else {
+          // completăm lipsurile dacă e cazul
+          const p = parseJwt(t);
+          const username = rxUser(body) || p?.sub || p?.username || 'You';
+          const saved = {
+            ...body,
+            rating: rxRating(body) || rating,
+            comment: body?.comment ?? comment,
+            username,
+            createdAt: rxWhen(body) || new Date().toISOString()
+          };
+          reviews = [saved, ...reviews];
+          renderReviews();
+        }
+
+        $('#comment').value = '';
+        msg.textContent = 'Review posted. Thank you!';
+        msg.classList.add('ok'); msg.style.display='block';
+      }catch(e){
+        msg.textContent = 'Network error: ' + e.message;
+        msg.style.display='block';
+      }
+    }
+
+    /* ---------- cart ---------- */
+    async function addToCart(id){
+      const t=getToken();
+      if(!t){ toast('Please login to use the cart.'); location.href='/login'; return; }
+      try{
+        const res = await apiFetch(`/api/cart/${id}`, { method:'POST' });
+        const body = await parseBody(res);
+        if(!res.ok){
+          const msg = typeof body==='string' ? body : (body?.message || body?.error || JSON.stringify(body));
+          message('Cart error: ' + msg, true);
+          return;
+        }
+        message('Added to cart 🧺');
+        refreshCartCount();
+      }catch(e){ message('Cart error: '+e.message, true); }
+    }
+    async function refreshCartCount(){
+      const t=getToken(); if(!t){ hide($('#cart-count')); return; }
+      try{
+        const res = await apiFetch('/api/cart/cakes', { method:'GET' });
+        if(!res.ok){ hide($('#cart-count')); return; }
+        const data = await parseBody(res);
+        const count = Array.isArray(data) ? data.length : 0;
+        if(count>0){ $('#cart-count').textContent=String(count); show($('#cart-count')); }
+        else { $('#cart-count').textContent='0'; hide($('#cart-count')); }
+      }catch(_){ hide($('#cart-count')); }
+    }
+
+    /* ---------- flash / toast ---------- */
+    function message(text, error=false){
+      const el = $('#flash');
+      el.textContent = text;
+      el.className = 'error' + (error ? '' : ' ok');
+      el.style.display='block';
+      clearTimeout(el._t);
+      el._t = setTimeout(()=>{ el.style.display='none'; }, 2000);
+    }
+    function toast(text){
+      const el=document.createElement('div'); el.textContent=text;
+      Object.assign(el.style,{position:'fixed',left:'50%',bottom:'26px',transform:'translateX(-50%)',
+        background:'#1f1a17',color:'#fff',padding:'10px 14px',borderRadius:'12px',
+        boxShadow:'0 8px 20px rgba(0,0,0,.25)',zIndex:9999,opacity:'0',transition:'opacity .15s, transform .15s'});
+      document.body.appendChild(el);
+      requestAnimationFrame(()=>{el.style.opacity='1'; el.style.transform='translateX(-50%) translateY(-4px)';});
+      setTimeout(()=>{el.style.opacity='0'; el.style.transform='translateX(-50%)';
+        setTimeout(()=>el.remove(),180);},1400);
+    }
+</script>
+</body>
+</html>

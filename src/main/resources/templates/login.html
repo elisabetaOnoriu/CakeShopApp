@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Login - CakeShop</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        body {
+          font-family: 'Segoe UI', sans-serif;
+          background-color: #fff7f0;
+          display: flex; align-items: center; justify-content: center;
+          height: 100vh; margin: 0;
+        }
+        .login-container {
+          background-color: #fff0e6; padding: 2rem 3rem; border-radius: 12px;
+          box-shadow: 0 8px 16px rgba(0,0,0,.1); width: 100%; max-width: 400px; text-align: center;
+        }
+        h1 { margin-bottom: 1.5rem; color: #d35400; }
+        label { display:block; margin-bottom:.5rem; font-weight:600; color:#444; }
+        input[type="text"], input[type="password"]{
+          width:100%; padding:.7rem; margin-bottom:1.2rem; border:1px solid #ddd; border-radius:8px; font-size:1rem;
+        }
+        button {
+          background-color:#ff8c42; color:white; border:none; padding:.8rem 1.5rem;
+          border-radius:8px; font-size:1rem; cursor:pointer; transition:background-color .2s;
+        }
+        button:hover { background-color:#e36c0a; }
+        .error { color:#c0392b; margin-bottom:1rem; display:none; }
+        .register-link { margin-top:1rem; display:block; color:#333; }
+        .register-link a { color:#d35400; text-decoration:none; font-weight:bold; }
+        .register-link a:hover { text-decoration:underline; }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <h1>Login to CakeShop</h1>
+
+    <div id="errorMessage" class="error">Invalid username or password. Please try again.</div>
+
+    <form id="loginForm" onsubmit="return submitForm(event)">
+        <div>
+            <label for="username">Username:</label>
+            <input id="username" name="username" type="text" autocomplete="username" required />
+        </div>
+
+        <div>
+            <label for="password">Password:</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required />
+        </div>
+
+        <div>
+            <button type="submit" id="loginBtn">Login</button>
+        </div>
+    </form>
+
+    <div class="register-link">
+        <p>Don't have an account? <a th:href="@{/register}" href="/register">Register</a></p>
+    </div>
+</div>
+
+<script>
+    // --- Helpers: decode & check JWT exp (client-side sanity only) ---
+    function base64UrlDecode(str) {
+      // JWT uses base64url (replace -_ and remove padding)
+      const pad = (s) => s + "===".slice((s.length + 3) % 4);
+      const b64 = pad(str.replace(/-/g, '+').replace(/_/g, '/'));
+      try { return atob(b64); } catch { return null; }
+    }
+
+    function parseJwt(token) {
+      if (!token || token.split('.').length !== 3) return null;
+      const payload = token.split('.')[1];
+      const json = base64UrlDecode(payload);
+      if (!json) return null;
+      try { return JSON.parse(json); } catch { return null; }
+    }
+
+    function isJwtExpired(token, skewSeconds = 30) {
+      const p = parseJwt(token);
+      if (!p || !p.exp) return true;
+      const now = Math.floor(Date.now() / 1000);
+      return p.exp < (now - skewSeconds); // considerăm expirat dacă e trecut
+    }
+
+    // Dacă există deja token valid → redirect la /home
+    (function autoRedirectIfLoggedIn() {
+      const existing = localStorage.getItem('token');
+      if (existing && !isJwtExpired(existing)) {
+        window.location.replace('/home');
+      }
+    })();
+
+    async function submitForm(event) {
+      event.preventDefault();
+      const err = document.getElementById('errorMessage');
+      const btn = document.getElementById('loginBtn');
+      err.style.display = 'none';
+      btn.disabled = true;
+
+      const payload = {
+        username: document.getElementById('username').value.trim(),
+        password: document.getElementById('password').value
+      };
+
+      try {
+        const res = await fetch('/api/users/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        // Expecting { user: {...}, token: "...", tokenType: "Bearer" }
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          const msg = (data && (data.error || data.message)) || 'Invalid username or password.';
+          err.textContent = msg;
+          err.style.display = 'block';
+          return false;
+        }
+
+        // Store token & user meta for subsequent API calls
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('tokenType', data.tokenType || 'Bearer');
+
+        if (data.user) {
+          if (data.user.username) localStorage.setItem('username', data.user.username);
+          if (data.user.role) localStorage.setItem('role', data.user.role);
+          if (data.user.id != null) localStorage.setItem('userId', String(data.user.id));
+        }
+
+        // Optional: sanity check exp and warn user
+        if (isJwtExpired(data.token)) {
+          err.textContent = 'Received an expired token. Please try logging in again.';
+          err.style.display = 'block';
+          localStorage.removeItem('token');
+          return false;
+        }
+
+        // Redirect after successful login
+        window.location.href = '/home';
+        return true;
+
+      } catch (e) {
+        console.error('Login error:', e);
+        err.textContent = 'Network error. Please try again.';
+        err.style.display = 'block';
+        return false;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+</script>
+</body>
+</html>

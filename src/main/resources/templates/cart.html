@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Your Cart – CakeShop</title>
+    <style>
+        :root{--bg:#fff8f3;--panel:#ffffff;--accent:#ffb347;--accent-2:#ff8c42;--ink:#2f2a26;--muted:#7b726d;--radius:16px;--shadow:0 12px 28px rgba(0,0,0,.08)}
+        *{box-sizing:border-box}
+        body{margin:0;background:linear-gradient(180deg,#fff7f0 0%,var(--bg) 100%);font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial;color:var(--ink)}
+        .wrap{max-width:1200px;margin:0 auto;padding:28px 20px 80px}
+        h1{font-size:36px;margin:6px 0 4px;color:#9b3f00}
+        .muted{color:var(--muted)}
+        .grid{display:grid;grid-template-columns:1fr 360px;gap:22px;margin-top:18px}
+
+        .panel{background:var(--panel);border:1px solid rgba(0,0,0,.06);border-radius:var(--radius);box-shadow:var(--shadow)}
+        .panel.pad{padding:16px}
+
+        .row{display:flex;align-items:center;gap:12px}
+        .space{justify-content:space-between}
+        .btn{appearance:none;border:0;border-radius:12px;padding:12px 16px;font-weight:800;cursor:pointer}
+        .btn.primary{background:linear-gradient(180deg,#fff,#ffe9d3);color:#c24e00;box-shadow:var(--shadow)}
+        .btn.primary:active{transform:translateY(1px)}
+        .btn.ghost{background:#fff3e6;color:#a94d00;border:1px solid #ffd3ad}
+
+        .items{padding:10px}
+        .item{display:grid;grid-template-columns:84px 1fr auto;gap:14px;padding:12px;border-top:1px dashed #f0ded1;align-items:center}
+        .item:first-child{border-top:0}
+        .thumb{width:84px;height:64px;border-radius:12px;background:
+          radial-gradient(120px 60px at 20% 20%, rgba(255,179,71,.35), transparent 40%),
+          radial-gradient(100px 60px at 80% 30%, rgba(255,140,66,.28), transparent 45%),
+          linear-gradient(180deg,#ffe8d6,#ffd9bd);border:1px solid rgba(0,0,0,.05)}
+        .item h3{margin:0 0 6px;color:#9b3f00}
+        .pill{display:inline-flex;align-items:center;gap:6px;background:#fff7ef;border:1px solid #ffd6b9;border-radius:999px;padding:6px 10px;font-weight:700;color:#a44500}
+        .price{font-weight:900;color:#d35400}
+        .qty{display:inline-flex;align-items:center;border:1px solid #f0ded1;border-radius:10px;overflow:hidden}
+        .qty button{width:30px;height:30px;border:0;background:#fff8f0;cursor:pointer}
+        .qty span{display:inline-block;min-width:28px;text-align:center}
+
+        .empty{padding:22px;margin:14px;border-radius:14px;background:#fff3e8;border:1px dashed #ffc9a3;color:#a94d00}
+        .error{padding:14px;margin:14px;border-radius:14px;background:#fff1ec;border:1px solid #ffd2c7;color:#b43a06;display:none}
+
+        .sum{padding:14px 16px;display:grid;gap:10px}
+        .line{display:flex;align-items:center;justify-content:space-between}
+        .total{font-size:22px;font-weight:900;color:#a44500}
+        .coupon{width:100%;padding:12px;border:1px solid #f0ded1;border-radius:10px}
+        .fade-in{animation:fade .25s ease-out}
+        @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+        /* skeleton */
+        .sk{padding:14px}
+        .sk-line{height:16px;border-radius:8px;background:linear-gradient(90deg, #fff0, #ffffffaa, #fff0);background-size:200% 100%;animation:shimmer 1.3s infinite linear;margin:12px 0}
+        @keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <h1>Your Cart</h1>
+    <div class="muted">Sweet picks waiting to be baked &amp; packed 🍰</div>
+
+    <div class="grid">
+        <!-- stânga: listă produse -->
+        <section class="panel">
+            <div id="sk" class="sk">
+                <div class="sk-line" style="width:80%"></div>
+                <div class="sk-line" style="width:50%"></div>
+                <div class="sk-line" style="width:65%"></div>
+            </div>
+
+            <div id="msg" class="error"></div>
+
+            <div id="empty" class="empty" style="display:none">Your cart is empty. <a href="/home">Browse cakes</a> to add something yummy.</div>
+
+            <div id="list" class="items" style="display:none"></div>
+        </section>
+
+        <!-- dreapta: sumar -->
+        <aside class="panel pad fade-in">
+            <h2 style="margin:0 0 8px;color:#a44500">Order Summary</h2>
+
+            <div class="sum">
+                <div class="line"><span>Subtotal</span><strong class="price" id="sum-sub">$0.00</strong></div>
+                <div class="line"><span>Estimated tax</span><span id="sum-tax">$0.00</span></div>
+                <div class="line"><span>Delivery</span><span>Free</span></div>
+                <hr style="border:none;border-top:1px solid #f0ded1" />
+                <div class="line total"><span>Total</span><span id="sum-total">$0.00</span></div>
+                <input id="coupon" class="coupon" placeholder="Have a coupon code?" />
+                <button id="btn-checkout" class="btn primary" type="button">Place order</button>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    /* ---------- helpers & auth ---------- */
+    const $ = s => document.querySelector(s);
+    const show = el => { el && (el.style.display=''); };
+    const hide = el => { el && (el.style.display='none'); };
+    const money = n => '$' + (Number(n||0)).toFixed(2);
+
+    const getToken = () => localStorage.getItem('token') || localStorage.getItem('authToken');
+    async function apiFetch(url, opts={}){
+      const t = getToken();
+      const headers = {'Accept':'application/json','Content-Type':'application/json', ...(opts.headers||{})};
+      if(t) headers.Authorization = `Bearer ${t}`;
+      return fetch(url, {cache:'no-store', ...opts, headers});
+    }
+    async function parseBody(res){
+      if(res.status===204) return null;
+      const ct=(res.headers.get('content-type')||'').toLowerCase();
+      return ct.includes('application/json') ? res.json() : res.text();
+    }
+
+    /* ---------- state ---------- */
+    let items = []; // [{id,name,price,qty,weight,description, ...}]
+
+    // Agregă duplicatele din /api/cart/cakes în funcție de id => qty
+    function aggregate(cakesArr){
+      const map = new Map();
+      (cakesArr||[]).forEach(c => {
+        const id = c.id ?? c.cakeId ?? c.cake_id;
+        if(!id) return;
+        const key = String(id);
+        const prev = map.get(key) || { ...c, id, qty:0 };
+        prev.qty += 1;
+        map.set(key, prev);
+      });
+      return [...map.values()];
+    }
+
+    function renderCart(){
+      const list = $('#list');
+      if(!items.length){
+        show($('#empty')); hide(list); return;
+      }
+      hide($('#empty')); show(list);
+
+      list.innerHTML = items.map(it => `
+        <div class="item fade-in">
+          <div class="thumb" aria-hidden="true"></div>
+          <div>
+            <h3>${escapeHtml(it.name||'Cake')}</h3>
+            <div class="row">
+              <span class="pill">Price: ${money(it.price)}</span>
+              <span class="pill">In stock: ${it.stock ?? '—'}</span>
+            </div>
+            <div class="muted" style="margin-top:6px">${escapeHtml(it.description||'')}</div>
+          </div>
+          <div class="row" style="flex-direction:column;align-items:flex-end;gap:8px">
+            <div class="qty" aria-label="quantity">
+              <button type="button" onclick="changeQty(${it.id},-1)">−</button>
+              <span>${it.qty}</span>
+              <button type="button" onclick="changeQty(${it.id},1)">+</button>
+            </div>
+            <div class="price">${money((it.price||0)*it.qty)}</div>
+          </div>
+        </div>
+      `).join('');
+
+      updateSummary();
+    }
+
+    function updateSummary(){
+      const sub = items.reduce((s,it)=> s + (Number(it.price||0)*it.qty), 0);
+      $('#sum-sub').textContent = money(sub);
+
+      // citim totalul din backend dacă e disponibil; fallback la sub + tax local
+      fetchTotalFromServer().then(total=>{
+        if(total!=null){
+          $('#sum-total').textContent = money(total);
+          $('#sum-tax').textContent = money(Math.max(total - sub, 0));
+        }else{
+          const tax = sub * 0.07; // fallback 7%
+          $('#sum-tax').textContent = money(tax);
+          $('#sum-total').textContent = money(sub + tax);
+        }
+      });
+    }
+
+    async function fetchTotalFromServer(){
+      try{
+        const res = await apiFetch('/api/cart/total', {method:'GET'});
+        if(!res.ok) return null;
+        const total = await res.json();
+        return Number(total);
+      }catch{ return null; }
+    }
+
+    function escapeHtml(s){ return String(s??'')
+      .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+      .replaceAll('"','&quot;').replaceAll("'","&#039;"); }
+
+    /* ---------- qty changes (optimist + re-fetch) ---------- */
+    async function changeQty(id, delta){
+      if(delta>0){
+        // mai adăugăm încă unul: POST /api/cart/{cakeId}
+        try{
+          const res = await apiFetch(`/api/cart/${id}`, {method:'POST'});
+          if(!res.ok){ throw new Error('Add failed'); }
+          // optimist: creștem qty local
+          const it = items.find(x=>String(x.id)===String(id));
+          if(it){ it.qty += 1; renderCart(); }
+        }catch(e){
+          flash('Could not add another item.');
+        }
+      }else{
+        // scădere locală (nu avem endpoint de remove în controller)
+        const it = items.find(x=>String(x.id)===String(id));
+        if(!it) return;
+        it.qty = Math.max(0, it.qty-1);
+        items = items.filter(x=>x.qty>0);
+        renderCart();
+      }
+    }
+
+    /* ---------- place order ---------- */
+    $('#btn-checkout').addEventListener('click', placeOrder);
+    async function placeOrder(){
+      const btn = $('#btn-checkout');
+      btn.disabled = true; const old = btn.textContent; btn.textContent = 'Placing...';
+      // încearcă câteva rute standard; dacă nu există, doar arată o confirmare simpatică
+      const routes = [
+        {url:'/api/orders', method:'POST'},
+        {url:'/api/cart/checkout', method:'POST'},
+      ];
+      let ok = false;
+      for(const r of routes){
+        try{
+          const res = await apiFetch(r.url,{method:r.method, body: JSON.stringify({})});
+          if(res.ok){ ok = true; break; }
+        }catch(_){}
+      }
+      if(ok){
+        confetti();
+        flash('Order placed! Thank you 🎉');
+        // opțional: go to /orders
+      }else{
+        flash('Order placed (demo). Hook this button to your checkout endpoint.', false);
+      }
+      btn.textContent = old; btn.disabled = false;
+    }
+
+    /* ---------- load cart ---------- */
+    async function loadCart(){
+      show($('#sk')); hide($('#list')); hide($('#msg')); $('#btn-checkout').disabled = false;
+
+      const t = getToken();
+      if(!t){
+        showMessage('Please <a href="/login">log in</a> to see your cart.');
+        hide($('#sk'));
+        return;
+      }
+
+      try{
+        const res = await apiFetch('/api/cart/cakes', {method:'GET'});
+        if(res.status===401){ showMessage('Please <a href="/login">log in</a> to see your cart.'); hide($('#sk')); return; }
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        const body = await res.json();       // List<CakeDTO>
+        items = aggregate(body);             // -> qty per cake
+        renderCart();
+      }catch(e){
+        console.error('[cart] load error:', e);
+        showMessage('Could not load your cart. Please try again.');
+      }finally{
+        hide($('#sk'));
+      }
+    }
+
+    function showMessage(html){
+      const box = $('#msg'); box.innerHTML = html; box.style.display = 'block';
+      hide($('#list')); hide($('#empty'));
+    }
+
+    function flash(text, isError=false){
+      const el = document.createElement('div');
+      el.textContent = text;
+      Object.assign(el.style,{position:'fixed',left:'50%',bottom:'26px',transform:'translateX(-50%)',
+        background:isError?'#b43a06':'#1f1a17',color:'#fff',padding:'10px 14px',borderRadius:'12px',
+        boxShadow:'0 8px 20px rgba(0,0,0,.25)',zIndex:9999,opacity:'0',transition:'opacity .15s, transform .15s'});
+      document.body.appendChild(el);
+      requestAnimationFrame(()=>{el.style.opacity='1'; el.style.transform='translateX(-50%) translateY(-4px)';});
+      setTimeout(()=>{el.style.opacity='0'; el.style.transform='translateX(-50%)';
+        setTimeout(()=>el.remove(),180);},1600);
+    }
+
+    // mică animație festivă
+    function confetti(){
+      for(let i=0;i<28;i++){
+        const s=document.createElement('div');
+        const size = 6+Math.random()*8;
+        s.style.cssText = `position:fixed;left:${(Math.random()*100).toFixed(2)}%;
+          top:-10px;width:${size}px;height:${size}px;border-radius:2px;
+          background:hsl(${(20+Math.random()*40).toFixed(0)}, 90%, ${(50+Math.random()*20).toFixed(0)}%);
+          opacity:.9;transform:translateY(0);transition:transform 1.2s linear, opacity .3s ease-out;z-index:9999`;
+        document.body.appendChild(s);
+        setTimeout(()=>{
+          s.style.transform=`translateY(${window.innerHeight+40}px) rotate(${(Math.random()*360).toFixed(0)}deg)`;
+          setTimeout(()=>s.remove(),1200);
+        },10);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadCart);
+</script>
+</body>
+</html>
